@@ -2,7 +2,7 @@
 set -euo pipefail
 set -x
 
-sdk='/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.2.sdk'
+sdk=`xcrun --show-sdk-path`
 frameworks="$sdk/System/Library/Frameworks"
 includes="$sdk/usr/include"
 libs="$sdk/usr/lib"
@@ -36,6 +36,8 @@ cp -R $frameworks/ApplicationServices.framework ./Frameworks/ApplicationServices
 cp -R $frameworks/ImageIO.framework ./Frameworks/ImageIO.framework
 cp -R $frameworks/GameController.framework ./Frameworks/GameController.framework
 cp -R $frameworks/Symbols.framework ./Frameworks/Symbols.framework
+cp -R $frameworks/CoreWLAN.framework ./Frameworks/CoreWLAN.framework
+cp -R $frameworks/SystemConfiguration.framework ./Frameworks/SystemConfiguration.framework
 
 # Audio frameworks
 cp -R $frameworks/AudioToolbox.framework ./Frameworks/AudioToolbox.framework
@@ -66,7 +68,7 @@ cp -R $frameworks/Kernel.framework ./Frameworks/Kernel.framework
 # Remove unnecessary files
 find . | grep '\.swiftmodule' | xargs rm -rf
 rm -rf Frameworks/IOKit.framework/Versions/A/Headers/ndrvsupport
-rm -rf Frameworks/IOKit.framework/Versions/A/Headers/pwr_mgt
+# rm -rf Frameworks/IOKit.framework/Versions/A/Headers/pwr_mgt
 rm -rf Frameworks/IOKit.framework/Versions/A/Headers/scsi
 rm -rf Frameworks/IOKit.framework/Versions/A/Headers/firewire
 rm -rf Frameworks/IOKit.framework/Versions/A/Headers/storage
@@ -79,9 +81,7 @@ cat ./Frameworks/Foundation.framework/Versions/C/Foundation.tbd | grep -v 'libsw
 mv tmp ./Frameworks/Foundation.framework/Versions/C/Foundation.tbd
 
 # 13M -> 368K
-# This is commented because I now use the Mach headers but we can probably
-# prune more of this out to lower the size.
-# find ./Frameworks/Kernel.framework -type f | grep -v IOKit/hidsystem | xargs rm -rf
+find ./Frameworks/Kernel.framework -type f | grep -v IOKit/hidsystem | xargs rm -rf
 
 # 29M -> 28M
 find . | grep '\.apinotes' | xargs rm -rf
@@ -99,3 +99,5 @@ rm ./Frameworks/CloudKit.framework/Versions/A/CloudKit.tbd
 
 # Remove all broken symlinks
 find . -type l ! -exec test -e {} \; -exec rm {} ';'
+
+tar -czvf macos_sdk.tar.gz lib include Frameworks
