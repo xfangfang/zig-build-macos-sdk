@@ -1,2 +1,6 @@
 # Zig stuff
 zig-*
+lib/
+include/
+Frameworks/*
+*.tar.gz

@@ -1,20 +1,35 @@
 name: CI
 on:
-  - push
-  - pull_request
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      ssh_darwin:
+        description: 'SSH connection to Darwin'
+        required: false
+        default: 'false'
 jobs:
   x86_64-macos:
-    runs-on: macos-12
+    runs-on: macos-14
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          submodules: 'true'
-      - name: Setup Zig
+        uses: actions/checkout@v4
+
+      - name: SSH connection to Actions
+        uses: P3TERX/ssh2actions@v1.0.0
+        if: (github.event.inputs.ssh_darwin == 'true' && github.event.inputs.ssh_darwin  != 'false') || contains(github.event.action, 'ssh_darwin')
+        
+      - name: Package SDK
         run: |
-          brew install xz
-          sudo sh -c 'wget -c https://ziglang.org/builds/zig-macos-x86_64-0.12.0-dev.2058+04ac028a2.tar.xz -O - | tar -xJ --strip-components=1 -C /usr/local/bin'
-      - name: build
-        run: zig build
-        env:
-          AGREE: true
+          uname -m
+          sw_vers -productVersion
+          bash ./update.sh
+        
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: macos_sdk.tar.gz
+          asset_name: macos_sdk.tar.gz
+          tag: borealis
+          overwrite: true
